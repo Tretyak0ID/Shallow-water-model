@@ -1,2 +1,2 @@
 # DynamicCoreOfTheAtmosphereModel
-* One-dimensionalSchemesForTheTransportEquation - одномерные схемы для уравнения переноса
+* One-dimensionalSchemesForTheTransportEquation - схемы для одномерного уравнения переноса
