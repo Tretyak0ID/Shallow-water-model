@@ -15,17 +15,27 @@ class TimeDiff:
         self.v              = v
         self.time_operator  = time_operator
         
+    def make_step(self, f):
+        return self.time_operator@f[j,:]
+        
     def diff(self, f):
         for j in range(f[:,0].size-1):
-            f[j+1,:] = self.time_operator@f[j,:]
+            f[j+1,:] = make_step(f[j,:])
     
-    #operators type
-    def Euler(tau, space_operator):
-        return np.eye(space_operator[0,:].size) - tau*space_operator
-            
-    def RK4(tau, space_operator):
+    
+class Euler(TimeDiff):
+    def __init__(self, tau, v, space_operarot): 
+        self.tau            = tau
+        self.v              = v
+        self.time_operator = np.eye(space_operator[0,:].size) - tau*space_operator
+        
+class RK4(TimeDiff):
+    def __init__(self, tau, v, space_operator): 
+        self.tau            = tau
+        self.v              = v
+        
         D1 = space_operator
         D2 = D1@D1
         D3 = D1@D1@D1
         D4 = D1@D1@D1@D1
-        return np.eye(space_operator[0,:].size) - tau*D1 - tau**2/2*D2 - tau**3/6*D3 - tau**4/24*D4
+        self.time_operator = np.eye(space_operator[0,:].size) - tau*D1 - tau**2/2*D2 - tau**3/6*D3 - tau**4/24*D4
