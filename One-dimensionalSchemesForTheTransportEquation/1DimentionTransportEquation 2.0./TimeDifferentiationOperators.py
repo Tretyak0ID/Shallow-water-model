@@ -37,7 +37,7 @@ class TimeDiff:
         return l2
 
     def l2HNorm(self, f):
-        #отслеживание l2-нормы (закон сохранения энергии)
+        #отслеживание l2-H-нормы (закон сохранения энергии)
         l2 = np.zeros(f[:,0].size)
         M = self.space_operator.H(f[0,:].size)
         for j in range(f[:,0].size):
@@ -52,26 +52,12 @@ class TimeDiff:
         return l1
 
     def l1HNorm(self, f):
-        #отслеживание сохранения интеграла (закон сохранения массы)
+        #отслеживание сохранения интеграла с H (закон сохранения массы)
         l1 = np.zeros(f[:,0].size)
         M = self.space_operator.H(f[0,:].size)
         for j in range(f[:,0].size):
             l1[j] = abs(np.ones(f[j,:].size)@M@self.space_operator.diff(f[j,:]))
         return l1
-
-    def l2SBP(self,f):
-        l2 = np.zeros(f[:,0].size)
-        M = self.space_operator.H(f[0,:].size)
-        for j in range(f[:,0].size):
-            l2[j] = abs(f[j,:]@M@self.space_operator.matrix@f[j,:])
-        return l2
-
-    def l2SAT(self,f):
-        l2 = np.zeros(f[:,0].size)
-        M = self.space_operator.H(f[0,:].size)
-        for j in range(f[:,0].size):
-            l2[j] = abs(f[j,:]@self.space_operator.SAT(f[j,:]))
-        return l2
 
 #-CHILD-CLASES-
 #   
