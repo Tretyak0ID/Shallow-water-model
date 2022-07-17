@@ -67,7 +67,7 @@ class SBP21(SpaceDiff):
         H    = sparse.spdiags(data, diags, size, size).toarray()
         H[ 0, 0] = 1/2
         H[-1,-1] = 1/2
-        return H
+        return H*self.h
     
     def Q(self,size):
         data  = np.array([-1/2*(np.ones(size)), 1/2*(np.ones(size))])
@@ -79,7 +79,7 @@ class SBP21(SpaceDiff):
         Q[ 0, 1] =  1/2
         Q[-1,-1] =  1/2
         Q[-1,-2] = -1/2
-        return self.v/self.h*Q
+        return Q
 
     def MatrixGenerate(self, size):
         return  np.linalg.inv(self.H(size)).dot(self.Q(size))
@@ -98,7 +98,7 @@ class SBP42(SpaceDiff):
         H[-2,-2] = H[1,1]
         H[-3,-3] = H[2,2]
         H[-4,-4] = H[3,3]
-        return H
+        return H*self.h
     
     def Q(self,size):
         data  = np.array([1/12*(np.zeros(size)+1), 2/3*(np.zeros(size)-1), 2/3*(np.zeros(size)+1), 1/12*(np.zeros(size)-1)])
@@ -131,7 +131,7 @@ class SBP42(SpaceDiff):
         Q[-3,-2] = -Q[-2,-3]
         Q[-4,-2] = -Q[-2,-4]
         Q[-4,-3] = -Q[-3,-4]
-        return self.v/self.h*Q
+        return Q
 
     def MatrixGenerate(self, size):
         return np.linalg.inv(self.H(size))@self.Q(size)
@@ -151,7 +151,7 @@ class SBP21PROJ(SBP21):
         return P
 
     def MatrixGenerate(self, size):
-        return self.P(size)@np.linalg.inv(self.H(size))@self.Q(size)
+        return self.v*(self.P(size)@np.linalg.inv(self.H(size))@self.Q(size))
 
 class SBP42PROJ(SBP42):
 
@@ -167,7 +167,7 @@ class SBP42PROJ(SBP42):
         return P
 
     def MatrixGenerate(self, size):
-        return self.P(size)@np.linalg.inv(self.H(size))@self.Q(size)
+        return self.v*(self.P(size)@np.linalg.inv(self.H(size))@self.Q(size))
 
 #4. SBP-SAT methods
 class SBP21SAT(SBP21):
@@ -181,7 +181,7 @@ class SBP21SAT(SBP21):
         return 1/2*(f[0]-f[-1])*(e0+eN)
 
     def diff(self, f):
-        return self.matrix@f + self.v*np.linalg.solve(self.H(f.size), self.SAT(f))
+        return self.v*(self.matrix@f + np.linalg.solve(self.H(f.size), self.SAT(f)))
 
 class SBP42SAT(SBP42):
 
@@ -194,5 +194,5 @@ class SBP42SAT(SBP42):
         return 1/2*(f[0]-f[-1])*(e0+eN)
 
     def diff(self, f):
-        return self.matrix@f + self.v*np.linalg.solve(self.H(f.size),self.SAT(f))
+        return self.v*(self.matrix@f + np.linalg.solve(self.H(f.size),self.SAT(f)))
 
