@@ -30,7 +30,7 @@ class TimeDiff:
 class Euler(TimeDiff):
 
     def make_step(self, f):
-        return f + self.tau*self.space_operator.diff(f)
+        return f - self.tau*self.space_operator.diff(f)
         
 class RK4(TimeDiff):
 
@@ -39,4 +39,4 @@ class RK4(TimeDiff):
         f2 = -self.space_operator.diff(f1)
         f3 = -self.space_operator.diff(f2)
         f4 = -self.space_operator.diff(f3)
-        return f + + self.tau*f1 + self.tau**2/2*f2 + self.tau**3/6*f3 + self.tau**4/24*f4
+        return f + self.tau*f1 + self.tau**2/2*f2 + self.tau**3/6*f3 + self.tau**4/24*f4
