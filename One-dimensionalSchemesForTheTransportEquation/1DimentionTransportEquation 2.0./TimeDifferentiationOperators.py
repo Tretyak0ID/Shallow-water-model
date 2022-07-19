@@ -25,40 +25,6 @@ class TimeDiff:
         for j in range(f[:,0].size-1):
             f[j+1,:] = self.make_step(f[j,:])
 
-    #Методы-анализа-ошибок
-    def CourantNumber(self):
-        print("CourantNumber: " + str(self.v*self.tau/self.space_operator.h))
-
-    def l2Norm(self, f):
-        #отслеживание l2-нормы (закон сохранения энергии)
-        l2 = np.zeros(f[:,0].size)
-        for j in range(f[:,0].size):
-            l2[j] = abs(f[j,:]@self.space_operator.diff(f[j,:]))*self.space_operator.h
-        return l2
-
-    def l2HNorm(self, f):
-        #отслеживание l2-H-нормы (закон сохранения энергии)
-        l2 = np.zeros(f[:,0].size)
-        M = self.space_operator.H(f[0,:].size)
-        for j in range(f[:,0].size):
-            l2[j] = abs(f[j,:]@M@self.space_operator.diff(f[j,:]))*self.space_operator.h
-        return l2
-
-    def l1Norm(self, f):
-        #отслеживание сохранения интеграла (закон сохранения массы)
-        l1 = np.zeros(f[:,0].size)
-        for j in range(f[:,0].size):
-            l1[j] = abs(np.ones(f[j,:].size)@self.space_operator.diff(f[j,:]))
-        return l1
-
-    def l1HNorm(self, f):
-        #отслеживание сохранения интеграла с H (закон сохранения массы)
-        l1 = np.zeros(f[:,0].size)
-        M = self.space_operator.H(f[0,:].size)
-        for j in range(f[:,0].size):
-            l1[j] = abs(np.ones(f[j,:].size)@M@self.space_operator.diff(f[j,:]))
-        return l1
-
 #-CHILD-CLASES-
 #   
 class Euler(TimeDiff):
