@@ -1,5 +1,6 @@
 import numpy              as np
 import scipy
+import math
 import SpaceDifferentiationOperators as SD 
 import TimeDifferentiationOperators as TD
 
@@ -21,18 +22,26 @@ class SchemeAnalyzer:
         #печатает число Куранта для данной схемы
         print("Courant number: " + str(self.space_operator.v*self.time_operator.tau/self.space_operator.h))
 
-    def l2Norm(self, f):
-        #отслеживание l2-нормы (закон сохранения энергии) для всего решения
+    def l2norm(self, f):
+        #l2-норма функции
+        return sqrt(f@f*self.space_operator.h)
+
+    def l1norm(self, f):
+        #l1-норма функции
+        return abs(np.ones(f.size)@f)
+
+    def Maxnorm(self, f):
+        #Равномерная норма функции
+        return max(abs(f))
+
+    def EnergyCons(self, f):
+        #отслеживание изменения l2-нормы (закон сохранения энергии)
         l2 = np.zeros(f[:,0].size)
         for j in range(f[:,0].size):
             l2[j] = abs(f[j,:]@self.space_operator.diff(f[j,:]))*self.space_operator.h
         return l2
 
-    def l2norm(self, f):
-        #l2-норма функции
-        return sqrt(f@f*self.space_operator.h)
-
-    def l1Norm(self, f):
+    def MassCons(self, f):
         #отслеживание сохранения интеграла (закон сохранения массы)
         l1 = np.zeros(f[:,0].size)
         for j in range(f[:,0].size):
@@ -43,241 +52,97 @@ class SchemeAnalyzer:
 
 class SBPAnalyzer(SchemeAnalyzer):
 #Анализатор SBP-схем
-    def l2Norm(self, f):
-        #отслеживание l2-H-нормы (закон сохранения энергии)
+    def EnergyCons(self, f):
         l2 = np.zeros(f[:,0].size)
-        M = self.space_operator.H(f[0,:].size)
         for j in range(f[:,0].size):
-            l2[j] = abs(f[j,:]@M@self.space_operator.diff(f[j,:]))*self.space_operator.h
+            l2[j] = abs(f[j,:]@self.space_operator.H(f[0,:].size)@self.space_operator.diff(f[j,:]))*self.space_operator.h
         return l2
 
-    def l2norm(self, f):
-        #l2-норма функции
-        M = self.space_operator.H(f.size)
-        return sqrt(abs(f@M@f)*self.space_operator.h)
-
-    def l1Norm(self, f):
-        #отслеживание сохранения интеграла с H (закон сохранения массы)
+    def MassCons(self, f):
         l1 = np.zeros(f[:,0].size)
-        M = self.space_operator.H(f[0,:].size)
         for j in range(f[:,0].size):
-            l1[j] = abs(np.ones(f[j,:].size)@M@self.space_operator.diff(f[j,:]))
+            l1[j] = abs(np.ones(f[j,:].size)@self.space_operator.H(f[0,:].size)@self.space_operator.diff(f[j,:]))
         return l1
 
+    def l2norm(self, f):
+        return sqrt(f@self.space_operator.H(f.size)@f*self.space_operator.h)
+
+    def l1norm(self, f):
+        return abs(np.ones(f.size)@self.space_operator.H(f.size)@f)
+
+
+
 class ApproxAnalyzer:
-    def __init__(self, time_operator, space_operator): 
-        self.time_operator = time_operator
+
+    def __init__(self, time_operator, space_operator, v): 
+        self.time_operator  = time_operator
         self.space_operator = space_operator
+        self.v              = v
 
-    def SinApprox(self, basis, num):
-        l2Error = np.zeros((num))
+    def SpaceDet(self, cx, xmax):
+        if  (self.space_operator == 'LeftPeriodic'):
+            D = SD.LeftPeriodic(xmax/cx, self.v, cx)
+        elif(self.space_operator == 'Center2Periodic'):
+            D = SD.Center2Periodic(xmax/cx, self.v, cx)
+        elif(self.space_operator == 'Center4Periodic'):
+            D = SD.Center4Periodic(xmax/cx, self.v, cx)
+        elif(self.space_operator == 'SBP21PROJ'):
+            D = SD.SBP21PROJ(xmax/cx, self.v, cx+1)
+        elif(self.space_operator == 'SBP42PROJ'):
+            D = SD.SBP42PROJ(xmax/cx, self.v, cx+1)
+        elif(self.space_operator == 'SBP21SAT'):
+            D = SD.SBP21SAT(xmax/cx, self.v, cx+1)
+        elif(self.space_operator == 'SBP42SAT'):
+            D = SD.SBP42SAT(xmax/cx, self.v, cx+1)
+        return D
 
-        for p in range(num):
-            cx  = 10*(basis**p)
-            ct  = 20*(basis**p)
-            h   = 2*pi/cx
-            tau = 2*pi/ct
-            #Coose scheme
-            if (self.time_operator == 'Euler'):
-                if  (self.space_operator == 'LeftPeriodic'):
-                    x  = np.arange(0 , cx, dtype=double)*h
-                    D = SD.LeftPeriodic(h, 1, cx)
-                    T = TD.Euler(tau, D)
-                    A = SchemeAnalyzer(T,D)
-                    A.PrintCourantNumber()
+    def TimeDef(self, ct, tmax, D):
+        if   (self.time_operator == 'Euler'):
+            T = TD.Euler(tmax/ct, D)
+        elif(self.time_operator == 'RK4'):
+            T = TD.RK4(tmax/ct, D)
+        return T
 
-                elif(self.space_operator == 'Center2Periodic'):
-                    x  = np.arange(0 , cx, dtype=double)*h
-                    D = SD.Center2Periodic(h, 1, cx)
-                    T = TD.Euler(tau, D)
-                    A = SchemeAnalyzer(T,D)
+    def SinTestConv(self, base, fcx, fct, tnum):
+        #Запускает счет на исходной и сгущенной в base раз сетки с синусом на tnum периодов, возвращает отношение l1,l2,max норм ошибок, стороит их графики
+        scx = fcx*base
+        sct = fct*base
 
-                elif(self.space_operator == 'Center4Periodic'):
-                    x  = np.arange(0 , cx, dtype=double)*h
-                    D = SD.Center4Periodic(h, 1, cx)
-                    T = TD.Euler(tau, D)
-                    A = SchemeAnalyzer(T,D)
-
-                elif(self.space_operator == 'SBP21PROJ'):
-                    x  = np.arange(0 , cx + 1, dtype=double)*h
-                    D = SD.SBP21PROJ(h, 1, cx+1)
-                    T = TD.Euler(tau, D)
-                    A = SBPAnalyzer(T,D)
-
-                elif(self.space_operator == 'SBP42PROJ'):
-                    x  = np.arange(0 , cx + 1, dtype=double)*h
-                    D = SD.SBP42PROJ(h, 1, cx+1)
-                    T = TD.Euler(tau, D)
-                    A = SBPAnalyzer(T,D)
-
-                elif(self.space_operator == 'SBP21SAT'):
-                    x  = np.arange(0 , cx + 1, dtype=double)*h
-                    D = SD.SBP21SAT(h, 1, cx+1)
-                    T = TD.Euler(tau, D)
-                    A = SBPAnalyzer(T,D)
-
-                elif(self.space_operator == 'SBP42SAT'):
-                    x  = np.arange(0 , cx + 1, dtype=double)*h
-                    D = SD.SBP42SAT(h, 1, cx+1)
-                    T = TD.Euler(tau, D)
-                    A = SBPAnalyzer(T,D)
-
-            elif(self.time_operator == 'RK4'):
-                if  (self.space_operator == 'LeftPeriodic'):
-                    x  = np.arange(0 , cx, dtype=double)*h
-                    D = SD.LeftPeriodic(h, 1, cx)
-                    T = TD.RK4(tau, D)
-                    A = SchemeAnalyzer(T,D)
-
-                elif(self.space_operator == 'Center2Periodic'):
-                    x  = np.arange(0 , cx, dtype=double)*h
-                    D = SD.Center2Periodic(h, 1, cx)
-                    T = TD.RK4(tau, D)
-                    A = SchemeAnalyzer(T,D)
-
-                elif(self.space_operator == 'Center4Periodic'):
-                    x  = np.arange(0 , cx, dtype=double)*h
-                    D = SD.Center4Periodic(h, 1, cx)
-                    T = TD.RK4(tau, D)
-                    A = SchemeAnalyzer(T,D)
-
-                elif(self.space_operator == 'SBP21PROJ'):
-                    x  = np.arange(0 , cx + 1, dtype=double)*h
-                    D = SD.SBP21PROJ(h, 1, cx+1)
-                    T = TD.RK4(tau, D)
-                    A = SBPAnalyzer(T,D)
-
-                elif(self.space_operator == 'SBP42PROJ'):
-                    x  = np.arange(0 , cx + 1, dtype=double)*h
-                    D = SD.SBP42PROJ(h, 1, cx+1)
-                    T = TD.RK4(tau, D)
-                    A = SBPAnalyzer(T,D)
-
-                elif(self.space_operator == 'SBP21SAT'):
-                    x  = np.arange(0 , cx + 1, dtype=double)*h
-                    D = SD.SBP21SAT(h, 1, cx+1)
-                    T = TD.RK4(tau, D)
-                    A = SBPAnalyzer(T,D)
-
-                elif(self.space_operator == 'SBP42SAT'):
-                    x  = np.arange(0 , cx + 1, dtype=double)*h
-                    D = SD.SBP42SAT(h, 1, cx+1)
-                    T = TD.RK4(tau, D)
-                    A = SBPAnalyzer(T,D)
-
-            analit = sin(x)
-            PHI = np.zeros((ct+1,x.size))
-            PHI[0] = analit
-            T.diff(PHI)
-            l2Error[p] = A.l2norm(PHI[-1]-analit)
+        D1 = self.SpaceDet(fcx, 2*pi)
+        D2 = self.SpaceDet(scx, 2*pi)
+        T1 = self.TimeDef(fct, 2*pi*tnum, D1)
+        T2 = self.TimeDef(sct, 2*pi*tnum, D2)
         
-        return l2Error
+        if('SBP' in self.space_operator):
+            x1      = np.arange(0 , fcx + 1, dtype=double)*2*pi/fcx
+            x2      = np.arange(0 , scx + 1, dtype=double)*2*pi/scx
+            PHI1    = np.zeros((fct+1, fcx+1))
+            PHI2    = np.zeros((sct+1, scx+1))
+            PHI1[0] = sin(x1)
+            PHI2[0] = sin(x2)
+            A1      = SBPAnalyzer(T1, D1)
+            A2      = SBPAnalyzer(T2, D2)
+        else:
+            x1      = np.arange(0 , fcx, dtype=double)*2*pi/fcx
+            x2      = np.arange(0 , scx, dtype=double)*2*pi/scx
+            PHI1    = np.zeros((fct+1, fcx))
+            PHI2    = np.zeros((sct+1, scx))
+            PHI1[0] = sin(x1)
+            PHI2[0] = sin(x2)
+            A1      = SchemeAnalyzer(T1, D1)
+            A2      = SchemeAnalyzer(T2, D2)
 
-
-    
-    def GaussApprox(self, basis, num):
-        l2Error = np.zeros((num))
-
-        for p in range(num):
-            cx  = 10*(basis**p)
-            ct  = 20*(basis**p)
-            h   = 2/cx
-            tau = 2/ct
-            #Coose scheme
-            if (self.time_operator == 'Euler'):
-                if  (self.space_operator == 'LeftPeriodic'):
-                    x  = np.arange(0 , cx, dtype=double)*h
-                    D = SD.LeftPeriodic(h, 1, cx)
-                    T = TD.Euler(tau, D)
-                    A = SchemeAnalyzer(T,D)
-
-                elif(self.space_operator == 'Center2Periodic'):
-                    x  = np.arange(-1 , cx, dtype=double)*h
-                    D = SD.Center2Periodic(h, 1, cx)
-                    T = TD.Euler(tau, D)
-                    A = SchemeAnalyzer(T,D)
-
-                elif(self.space_operator == 'Center4Periodic'):
-                    x  = np.arange(0 , cx, dtype=double)*h
-                    D = SD.Center4Periodic(h, 1, cx)
-                    T = TD.Euler(tau, D)
-                    A = SchemeAnalyzer(T,D)
-
-                elif(self.space_operator == 'SBP21PROJ'):
-                    x  = np.arange(0 , cx + 1, dtype=double)*h
-                    D = SD.SBP21PROJ(h, 1, cx+1)
-                    T = TD.Euler(tau, D)
-                    A = SBPAnalyzer(T,D)
-
-                elif(self.space_operator == 'SBP42PROJ'):
-                    x  = np.arange(0 , cx + 1, dtype=double)*h
-                    D = SD.SBP42PROJ(h, 1, cx+1)
-                    T = TD.Euler(tau, D)
-                    A = SBPAnalyzer(T,D)
-
-                elif(self.space_operator == 'SBP21SAT'):
-                    x  = np.arange(0 , cx + 1, dtype=double)*h
-                    D = SD.SBP21SAT(h, 1, cx+1)
-                    T = TD.Euler(tau, D)
-                    A = SBPAnalyzer(T,D)
-
-                elif(self.space_operator == 'SBP42SAT'):
-                    x  = np.arange(0 , cx + 1, dtype=double)*h
-                    D = SD.SBP42SAT(h, 1, cx+1)
-                    T = TD.Euler(tau, D)
-                    A = SBPAnalyzer(T,D)
-
-            elif(self.time_operator == 'RK4'):
-                if  (self.space_operator == 'LeftPeriodic'):
-                    x  = np.arange(0 , cx, dtype=double)*h
-                    D = SD.LeftPeriodic(h, 1, cx)
-                    T = TD.RK4(tau, D)
-                    A = SchemeAnalyzer(T,D)
-
-                elif(self.space_operator == 'Center2Periodic'):
-                    x  = np.arange(0 , cx, dtype=double)*h
-                    D = SD.Center2Periodic(h, 1, cx)
-                    T = TD.RK4(tau, D)
-                    A = SchemeAnalyzer(T,D)
-
-                elif(self.space_operator == 'Center4Periodic'):
-                    x  = np.arange(0 , cx, dtype=double)*h
-                    D = SD.Center4Periodic(h, 1, cx)
-                    T = TD.RK4(tau, D)
-                    A = SchemeAnalyzer(T,D)
-
-                elif(self.space_operator == 'SBP21PROJ'):
-                    x  = np.arange(0 , cx + 1, dtype=double)*h
-                    D = SD.SBP21PROJ(h, 1, cx+1)
-                    T = TD.RK4(tau, D)
-                    A = SBPAnalyzer(T,D)
-
-                elif(self.space_operator == 'SBP42PROJ'):
-                    x  = np.arange(0 , cx + 1, dtype=double)*h
-                    D = SD.SBP42PROJ(h, 1, cx+1)
-                    T = TD.RK4(tau, D)
-                    A = SBPAnalyzer(T,D)
-
-                elif(self.space_operator == 'SBP21SAT'):
-                    x  = np.arange(0 , cx + 1, dtype=double)*h
-                    D = SD.SBP21SAT(h, 1, cx+1)
-                    T = TD.RK4(tau, D)
-                    A = SBPAnalyzer(T,D)
-
-                elif(self.space_operator == 'SBP42SAT'):
-                    x  = np.arange(0 , cx + 1, dtype=double)*h
-                    D = SD.SBP42SAT(h, 1, cx+1)
-                    T = TD.RK4(tau, D)
-                    A = SBPAnalyzer(T,D)
-
-            analit = exp((-(x-1)**2)/(0.05))
-            PHI = np.zeros((ct+1,x.size))
-            PHI[0] = analit
-            T.diff(PHI)
-            l2Error[p] = A.l2norm(PHI[-1]-analit)
+        for i in range(fct+1):
+            T1.diff(PHI1)
+            T2.diff(PHI2)
         
-        return l2Error
-        
+        Error1 = PHI1[-1] - PHI1[0]
+        Error2 = PHI2[-1] - PHI2[0]
 
+        fig,ax = plt.subplots(1,2)
+        fig.set_size_inches(15,5)
+        ax[0].plot(x1,Error1)
+        ax[1].plot(x2,Error2)
 
-    
+        return A1.l2norm(Error1)/A2.l2norm(Error2)
+
