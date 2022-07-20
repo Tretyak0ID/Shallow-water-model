@@ -6,7 +6,9 @@ from scipy                import sparse
 from scipy.sparse         import linalg
 from numpy                import pi, sin, cos, ma, sqrt
 from pylab                import *
-
+#----------------------------------------------------------------------------------------#
+#-------------------------------------BEGIN----------------------------------------------#
+#----------------------------------------------------------------------------------------#
 #-MAIN-CLASS-
 class TimeDiff:
     
@@ -25,8 +27,7 @@ class TimeDiff:
         for j in range(f[:,0].size-1):
             f[j+1,:] = self.make_step(f[j,:])
 
-#-CHILD-CLASES-
-#   
+#-CHILD-CLASES- 
 class Euler(TimeDiff):
 
     def make_step(self, f):

@@ -6,11 +6,13 @@ import TimeDifferentiationOperators as TD
 
 from scipy                import sparse
 from scipy.sparse         import linalg
-from numpy                import pi, sin, cos, ma, sqrt
+from numpy                import pi, sin, cos, ma, sqrt, exp
 from pylab                import *
-
+#----------------------------------------------------------------------------------------#
+#-------------------------------------BEGIN----------------------------------------------#
+#----------------------------------------------------------------------------------------#
 class SchemeAnalyzer:
-#Обычный анализатор
+#Обычный анализатор cхемы
     def __init__(self, time_operator, space_operator): 
         if (time_operator.space_operator == space_operator):
             self.time_operator = time_operator
@@ -72,8 +74,8 @@ class SBPAnalyzer(SchemeAnalyzer):
 
 
 
-class ApproxAnalyzer:
-
+class ConvAnalyzer:
+#Анализатор сходимости схем
     def __init__(self, time_operator, space_operator, v): 
         self.time_operator  = time_operator
         self.space_operator = space_operator
@@ -81,27 +83,25 @@ class ApproxAnalyzer:
 
     def SpaceDet(self, cx, xmax):
         if  (self.space_operator == 'LeftPeriodic'):
-            D = SD.LeftPeriodic(xmax/cx, self.v, cx)
+            return SD.LeftPeriodic(xmax/cx, self.v, cx)
         elif(self.space_operator == 'Center2Periodic'):
-            D = SD.Center2Periodic(xmax/cx, self.v, cx)
+            return SD.Center2Periodic(xmax/cx, self.v, cx)
         elif(self.space_operator == 'Center4Periodic'):
-            D = SD.Center4Periodic(xmax/cx, self.v, cx)
+            return SD.Center4Periodic(xmax/cx, self.v, cx)
         elif(self.space_operator == 'SBP21PROJ'):
-            D = SD.SBP21PROJ(xmax/cx, self.v, cx+1)
+            return SD.SBP21PROJ(xmax/cx, self.v, cx+1)
         elif(self.space_operator == 'SBP42PROJ'):
-            D = SD.SBP42PROJ(xmax/cx, self.v, cx+1)
+            return SD.SBP42PROJ(xmax/cx, self.v, cx+1)
         elif(self.space_operator == 'SBP21SAT'):
-            D = SD.SBP21SAT(xmax/cx, self.v, cx+1)
+            return SD.SBP21SAT(xmax/cx, self.v, cx+1)
         elif(self.space_operator == 'SBP42SAT'):
-            D = SD.SBP42SAT(xmax/cx, self.v, cx+1)
-        return D
+            return SD.SBP42SAT(xmax/cx, self.v, cx+1)
 
     def TimeDef(self, ct, tmax, D):
         if   (self.time_operator == 'Euler'):
-            T = TD.Euler(tmax/ct, D)
+            return TD.Euler(tmax/ct, D)
         elif(self.time_operator == 'RK4'):
-            T = TD.RK4(tmax/ct, D)
-        return T
+            return TD.RK4(tmax/ct, D)
 
     def SinTestConv(self, base, fcx, fct, tnum):
         #Запускает счет на исходной и сгущенной в base раз сетки с синусом на tnum периодов, возвращает отношение l1,l2,max норм ошибок, стороит их графики
@@ -116,33 +116,74 @@ class ApproxAnalyzer:
         if('SBP' in self.space_operator):
             x1      = np.arange(0 , fcx + 1, dtype=double)*2*pi/fcx
             x2      = np.arange(0 , scx + 1, dtype=double)*2*pi/scx
-            PHI1    = np.zeros((fct+1, fcx+1))
-            PHI2    = np.zeros((sct+1, scx+1))
-            PHI1[0] = sin(x1)
-            PHI2[0] = sin(x2)
-            A1      = SBPAnalyzer(T1, D1)
-            A2      = SBPAnalyzer(T2, D2)
+            PHI1    = np.zeros((fct + 1, fcx + 1))
+            PHI2    = np.zeros((sct + 1, scx + 1))
+            M1      = D1.H(x1.size)
+            M2      = D2.H(x2.size)
         else:
             x1      = np.arange(0 , fcx, dtype=double)*2*pi/fcx
             x2      = np.arange(0 , scx, dtype=double)*2*pi/scx
             PHI1    = np.zeros((fct+1, fcx))
             PHI2    = np.zeros((sct+1, scx))
-            PHI1[0] = sin(x1)
-            PHI2[0] = sin(x2)
-            A1      = SchemeAnalyzer(T1, D1)
-            A2      = SchemeAnalyzer(T2, D2)
+            M1      = np.eye(x1.size)
+            M2      = np.eye(x2.size)
 
+        PHI1[0] = sin(x1)
+        PHI2[0] = sin(x2)
         for i in range(fct+1):
             T1.diff(PHI1)
             T2.diff(PHI2)
         
-        Error1 = PHI1[-1] - PHI1[0]
-        Error2 = PHI2[-1] - PHI2[0]
+        Error1 = PHI1[-1] - sin(x1)
+        Error2 = PHI2[-1] - sin(x2)
 
         fig,ax = plt.subplots(1,2)
         fig.set_size_inches(15,5)
         ax[0].plot(x1,Error1)
         ax[1].plot(x2,Error2)
 
-        return A1.l2norm(Error1)/A2.l2norm(Error2)
+        print("Order of Convergence: " + str(math.log(sqrt(2*pi/fcx*Error1@Error1)/sqrt(2*pi/scx*Error2@Error2),base)))
+        return sqrt(2*pi/fcx*Error1@Error1)/sqrt(2*pi/scx*Error2@Error2)
+
+    def GaussTestConv(self, base, fcx, fct, tnum):
+        #Запускает счет на исходной и сгущенной в base раз сетки с синусом на tnum периодов, возвращает отношение l1,l2,max норм ошибок, стороит их графики
+        scx = fcx*base
+        sct = fct*base
+
+        D1 = self.SpaceDet(fcx, 2)
+        D2 = self.SpaceDet(scx, 2)
+        T1 = self.TimeDef(fct, 2*tnum, D1)
+        T2 = self.TimeDef(sct, 2*tnum, D2)
+        
+        if('SBP' in self.space_operator):
+            x1      = np.arange(0 , fcx + 1, dtype=double)*2/fcx
+            x2      = np.arange(0 , scx + 1, dtype=double)*2/scx
+            PHI1    = np.zeros((fct + 1, fcx + 1))
+            PHI2    = np.zeros((sct + 1, scx + 1))
+            M1      = D1.H(x1.size)
+            M2      = D2.H(x2.size)
+        else:
+            x1      = np.arange(0 , fcx, dtype=double)*2/fcx
+            x2      = np.arange(0 , scx, dtype=double)*2/scx
+            PHI1    = np.zeros((fct+1, fcx))
+            PHI2    = np.zeros((sct+1, scx))
+            M1      = np.eye(x1.size)
+            M2      = np.eye(x2.size)
+
+        PHI1[0] = exp(-(x1-1)**2/0.5)
+        PHI2[0] = exp(-(x2-1)**2/0.5)
+        for i in range(fct+1):
+            T1.diff(PHI1)
+            T2.diff(PHI2)
+        
+        Error1 = PHI1[-1] - exp(-(x1-1)**2/0.5)
+        Error2 = PHI2[-1] - exp(-(x2-1)**2/0.5)
+
+        fig,ax = plt.subplots(1,2)
+        fig.set_size_inches(15,5)
+        ax[0].plot(x1,Error1)
+        ax[1].plot(x2,Error2)
+
+        print("Order of Convergence: " + str(math.log(sqrt(2/fcx*Error1@Error1)/sqrt(2/scx*Error2@Error2),base)))
+        return sqrt(2/fcx*Error1@Error1)/sqrt(2/scx*Error2@Error2)
 
