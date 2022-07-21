@@ -28,7 +28,7 @@ class SpaceDiff:
     
 #-CHILD-CLASES-
 #1. periodic operators
-class LeftPeriodic(SpaceDiff):
+class Left1Periodic(SpaceDiff):
     
     def MatrixGenerate(self, size):
         data  = np.array([np.zeros(size)-1, np.zeros(size)+1])
@@ -36,6 +36,47 @@ class LeftPeriodic(SpaceDiff):
         D       =   sparse.spdiags(data, diags, size, size).toarray()
         D[0,-1] =  -1 #Внесение переодичности методом виртуальных точек
         return self.v/self.h*D
+
+class Left2Periodic(SpaceDiff):
+    
+    def MatrixGenerate(self, size):
+        data  = np.array([np.ones(size), -4*np.ones(size), 3*np.ones(size)])
+        diags = np.array([-2, -1, 0])
+        D       =   sparse.spdiags(data, diags, size, size).toarray()
+        D[0,-1] =  -4 #Внесение переодичности методом виртуальных точек
+        D[0,-2] =   1 #Внесение переодичности методом виртуальных точек
+        D[1,-1] =   1 #Внесение переодичности методом виртуальных точек
+        return self.v/(2*self.h)*D
+
+class Left3Periodic(SpaceDiff):
+    
+    def MatrixGenerate(self, size):
+        data  = np.array([1/6*np.ones(size), -1*np.ones(size), 1/2*np.ones(size), 1/3*np.ones(size)])
+        diags = np.array([-2, -1, 0, 1])
+        D       =   sparse.spdiags(data, diags, size, size).toarray()
+        D[0,-1] =  -1   #Внесение переодичности методом виртуальных точек
+        D[0,-2] =   1/6 #Внесение переодичности методом виртуальных точек
+        D[1,-1] =   1/6 #Внесение переодичности методом виртуальных точек
+        D[-1,0] =   1/3 #Внесение переодичности методом виртуальных точек
+        return self.v/(self.h)*D
+
+class Left4Periodic(SpaceDiff):
+    
+    def MatrixGenerate(self, size):
+        data  = np.array([1/4*np.ones(size), -4/3*np.ones(size), 3*np.ones(size), -4*np.ones(size), 25/12*np.ones(size)])
+        diags = np.array([-4, -3, -2, -1, 0])
+        D       =   sparse.spdiags(data, diags, size, size).toarray()
+        D[0,-1] =  -4   #Внесение переодичности методом виртуальных точек
+        D[0,-2] =   3   #Внесение переодичности методом виртуальных точек
+        D[0,-3] =  -4/3 #Внесение переодичности методом виртуальных точек
+        D[0,-4] =   1/4 #Внесение переодичности методом виртуальных точек
+        D[1,-1] =   3   #Внесение переодичности методом виртуальных точек
+        D[1,-2] =  -4/3 #Внесение переодичности методом виртуальных точек
+        D[1,-3] =   1/4 #Внесение переодичности методом виртуальных точек
+        D[2,-1] =  -4/3 #Внесение переодичности методом виртуальных точек
+        D[2,-2] =   1/4 #Внесение переодичности методом виртуальных точек
+        D[3,-1] =   1/4 #Внесение переодичности методом виртуальных точек
+        return self.v/(self.h)*D
         
 class Center2Periodic(SpaceDiff):
     

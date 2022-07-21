@@ -82,8 +82,14 @@ class ConvAnalyzer:
         self.v              = v
 
     def SpaceDet(self, cx, xmax):
-        if  (self.space_operator == 'LeftPeriodic'):
-            return SD.LeftPeriodic(xmax/cx, self.v, cx)
+        if  (self.space_operator == 'Left1Periodic'):
+            return SD.Left1Periodic(xmax/cx, self.v, cx)
+        elif(self.space_operator == 'Left2Periodic'):
+            return SD.Left2Periodic(xmax/cx, self.v, cx)
+        elif(self.space_operator == 'Left3Periodic'):
+            return SD.Left3Periodic(xmax/cx, self.v, cx)
+        elif(self.space_operator == 'Left4Periodic'):
+            return SD.Left4Periodic(xmax/cx, self.v, cx)
         elif(self.space_operator == 'Center2Periodic'):
             return SD.Center2Periodic(xmax/cx, self.v, cx)
         elif(self.space_operator == 'Center4Periodic'):
@@ -100,8 +106,12 @@ class ConvAnalyzer:
     def TimeDef(self, ct, tmax, D):
         if   (self.time_operator == 'Euler'):
             return TD.Euler(tmax/ct, D)
+        elif(self.time_operator == 'RK2'):
+            return TD.RK2(tmax/ct, D)
         elif(self.time_operator == 'RK4'):
             return TD.RK4(tmax/ct, D)
+        elif(self.time_operator == 'RK6'):
+            return TD.RK6(tmax/ct, D)
 
     def SinTestConv(self, base, fcx, fct, tnum):
         #Запускает счет на исходной и сгущенной в base раз сетки с синусом на tnum периодов, возвращает отношение l1,l2,max норм ошибок, стороит их графики
