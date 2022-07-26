@@ -82,18 +82,23 @@ class ConvAnalyzer:
         self.v              = v
 
     def SpaceDet(self, cx, xmax):
+        #левые направленные разности
         if  (self.space_operator == 'Left1Periodic'):
             return SD.Left1Periodic(xmax/cx, self.v, cx)
         elif(self.space_operator == 'Left2Periodic'):
-            return SD.Left2Periodic(xmax/cx, self.v, cx)
-        elif(self.space_operator == 'Left3Periodic'):
-            return SD.Left3Periodic(xmax/cx, self.v, cx)
-        elif(self.space_operator == 'Left4Periodic'):
-            return SD.Left4Periodic(xmax/cx, self.v, cx)
+            return SD.Left21Periodic(xmax/cx, self.v, cx)
+        elif(self.space_operator == 'Left21Periodic'):
+            return SD.Left21Periodic(xmax/cx, self.v, cx)
+        elif(self.space_operator == 'Left32Periodic'):
+            return SD.Left32Periodic(xmax/cx, self.v, cx)
+
+        #Центральные схемы
         elif(self.space_operator == 'Center2Periodic'):
             return SD.Center2Periodic(xmax/cx, self.v, cx)
         elif(self.space_operator == 'Center4Periodic'):
             return SD.Center4Periodic(xmax/cx, self.v, cx)
+
+        #SBP-SAT
         elif(self.space_operator == 'SBP21PROJ'):
             return SD.SBP21PROJ(xmax/cx, self.v, cx+1)
         elif(self.space_operator == 'SBP42PROJ'):
