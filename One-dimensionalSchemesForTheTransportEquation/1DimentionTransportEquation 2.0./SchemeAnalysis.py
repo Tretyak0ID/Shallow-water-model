@@ -86,9 +86,11 @@ class ConvAnalyzer:
         if  (self.space_operator == 'Left1Periodic'):
             return SD.Left1Periodic(xmax/cx, self.v, cx)
         elif(self.space_operator == 'Left2Periodic'):
-            return SD.Left21Periodic(xmax/cx, self.v, cx)
+            return SD.Left2Periodic(xmax/cx, self.v, cx)
         elif(self.space_operator == 'Left21Periodic'):
             return SD.Left21Periodic(xmax/cx, self.v, cx)
+        elif(self.space_operator == 'Left31Periodic'):
+            return SD.Left31Periodic(xmax/cx, self.v, cx)
         elif(self.space_operator == 'Left32Periodic'):
             return SD.Left32Periodic(xmax/cx, self.v, cx)
 
