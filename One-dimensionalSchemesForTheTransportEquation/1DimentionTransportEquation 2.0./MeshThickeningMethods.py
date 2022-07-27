@@ -20,8 +20,10 @@ class SBP21SAT2BLOCKS(SD.SpaceDiff):
         self.hl      = hl
         self.hr      = hr
         self.v       = v
+        self.sizel   = sizel-1
+        self.sizer   = sizer-1
         self.opl  = SD.SBP21(hl, v, sizel)
-        self.opr  = SD.SBP21(hl, v, sizer)
+        self.opr  = SD.SBP21(hr, v, sizer)
 
     def SATL(self, fl, fr):
         #SAT-добавки в оператор
@@ -29,7 +31,7 @@ class SBP21SAT2BLOCKS(SD.SpaceDiff):
         eN = np.zeros(fl.size)
         e0[ 0] = 1
         eN[-1] = 1
-        return 1/2*(fl[0]-fr[-1])*e0 + 1/2*(fl[-1] - fr[0])*eN
+        return 1/2*(fl[0]-fr[-1])*e0 - 1/2 *(fl[-1] - fr[0])*eN
 
     def SATR(self, fl, fr):
         #SAT-добавки в оператор
@@ -41,6 +43,17 @@ class SBP21SAT2BLOCKS(SD.SpaceDiff):
 
     def diff(self, fl, fr):
         return np.array([self.v*(self.opl.matrix@fl + np.linalg.solve(self.opl.H(fl.size), self.SATL(fl,fr))), self.v*(self.opr.matrix@fr + np.linalg.solve(self.opr.H(fr.size), self.SATR(fl,fr)))])
+
+class SBP42SAT2BLOCKS(SBP21SAT2BLOCKS):
+
+    def __init__(self, hl, hr, v, sizel, sizer):
+        self.hl      = hl
+        self.hr      = hr
+        self.v       = v
+        self.sizel   = sizel-1
+        self.sizer   = sizer-1
+        self.opl  = SD.SBP42(hl, v, sizel)
+        self.opr  = SD.SBP42(hr, v, sizer)
 
 class RK4BLOCKS2():
     def __init__(self, tau, space_op): 
@@ -82,3 +95,9 @@ class Block2Mesh:
 
     def diff(self):
         self.time_op.diff(self.PHIl , self.PHIr)
+
+    def GetFullSolution(self):
+        PHI_full = np.zeros((self.PHIl[:,0].size, np.concatenate((self.PHIl[0], self.PHIr[0])).size))
+        for i in range(self.PHIl[:,0].size):
+            PHI_full[i] = np.concatenate((self.PHIl[i], self.PHIr[i]))
+        return [np.concatenate((self.blockl.mesh, self.blockr.mesh)), PHI_full]

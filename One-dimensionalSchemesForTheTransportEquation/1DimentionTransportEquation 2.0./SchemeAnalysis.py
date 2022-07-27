@@ -14,11 +14,8 @@ from pylab                import *
 class SchemeAnalyzer:
 #Обычный анализатор cхемы
     def __init__(self, time_operator, space_operator): 
-        if (time_operator.space_operator == space_operator):
-            self.time_operator = time_operator
-            self.space_operator = space_operator
-        else:
-            print("The operators don't match")
+        self.time_operator = time_operator
+        self.space_operator = space_operator
 
     def PrintCourantNumber(self):
         #печатает число Куранта для данной схемы
