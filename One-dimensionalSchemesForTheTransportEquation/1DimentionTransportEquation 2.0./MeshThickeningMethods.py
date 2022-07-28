@@ -55,6 +55,26 @@ class SBP42SAT2BLOCKS(SBP21SAT2BLOCKS):
         self.opl  = SD.SBP42(hl, v, sizel)
         self.opr  = SD.SBP42(hr, v, sizer)
 
+    def SATL(self, fl, fr):
+        #SAT-добавки в оператор
+        e0 = np.zeros(fl.size)
+        eN = np.zeros(fl.size)
+        e0[ 0] = 1
+        eN[-1] = 1
+        return 1/2*(fl[0]-fr[-1])*e0 - 1/2 *(fl[-1] - fr[0])*eN
+
+    def SATR(self, fl, fr):
+        #SAT-добавки в оператор
+        e0 = np.zeros(fr.size)
+        eN = np.zeros(fr.size)
+        e0[ 0] = 1
+        eN[-1] = 1
+        return -1/2*(fl[-1]-fr[0])*e0 + 1/2*(fl[0] - fr[-1])*eN
+
+    def diff(self, fl, fr):
+        return np.array([self.v*(self.opl.matrix@fl + np.linalg.solve(self.opl.H(fl.size), self.SATL(fl,fr))), self.v*(self.opr.matrix@fr + np.linalg.solve(self.opr.H(fr.size), self.SATR(fl,fr)))])
+
+
 class RK4BLOCKS2():
     def __init__(self, tau, space_op): 
         self.tau       = tau
