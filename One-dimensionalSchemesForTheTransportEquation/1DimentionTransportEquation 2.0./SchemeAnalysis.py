@@ -54,20 +54,20 @@ class SBPAnalyzer(SchemeAnalyzer):
     def EnergyCons(self, f):
         l2 = np.zeros(f[:,0].size)
         for j in range(f[:,0].size):
-            l2[j] = abs(f[j,:]@self.space_operator.H(f[0,:].size)@self.space_operator.diff(f[j,:]))*self.space_operator.h
+            l2[j] = abs(f[j,:]@self.space_operator.H()@self.space_operator.diff(f[j,:]))
         return l2
 
     def MassCons(self, f):
         l1 = np.zeros(f[:,0].size)
         for j in range(f[:,0].size):
-            l1[j] = abs(np.ones(f[j,:].size)@self.space_operator.H(f[0,:].size)@self.space_operator.diff(f[j,:]))
+            l1[j] = abs(np.ones(f[j,:].size)@self.space_operator.H()@self.space_operator.diff(f[j,:]))
         return l1
 
     def l2norm(self, f):
-        return sqrt(f@self.space_operator.H(f.size)@f*self.space_operator.h)
+        return sqrt(f@self.space_operator.H()@f*self.space_operator.h)
 
     def l1norm(self, f):
-        return abs(np.ones(f.size)@self.space_operator.H(f.size)@f)
+        return abs(np.ones(f.size)@self.space_operator.H()@f)
 
 
 
@@ -184,14 +184,14 @@ class ConvAnalyzer:
             M1      = np.eye(x1.size)
             M2      = np.eye(x2.size)
 
-        PHI1[0] = exp(-(x1-1)**2/0.5)
-        PHI2[0] = exp(-(x2-1)**2/0.5)
+        PHI1[0] = exp(-(x1-1)**2/0.05)
+        PHI2[0] = exp(-(x2-1)**2/0.05)
         for i in range(fct+1):
             T1.diff(PHI1)
             T2.diff(PHI2)
         
-        Error1 = PHI1[-1] - exp(-(x1-1)**2/0.5)
-        Error2 = PHI2[-1] - exp(-(x2-1)**2/0.5)
+        Error1 = PHI1[-1] - exp(-(x1-1)**2/0.05)
+        Error2 = PHI2[-1] - exp(-(x2-1)**2/0.05)
 
         fig,ax = plt.subplots(1,2)
         fig.set_size_inches(15,5)
