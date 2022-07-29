@@ -1,13 +1,17 @@
-import numpy              as np
+import numpy                         as np
 import scipy
 import math
+import matplotlib.pyplot             as plt
 import SpaceDifferentiationOperators as SD 
-import TimeDifferentiationOperators as TD
+import TimeDifferentiationOperators  as TD
 
 from scipy                import sparse
 from scipy.sparse         import linalg
 from numpy                import pi, sin, cos, ma, sqrt, exp
 from pylab                import *
+from matplotlib           import cm
+from matplotlib.ticker    import LinearLocator, FormatStrFormatter
+from matplotlib           import animation
 #----------------------------------------------------------------------------------------#
 #-------------------------------------BEGIN----------------------------------------------#
 #----------------------------------------------------------------------------------------#
@@ -48,7 +52,6 @@ class SchemeAnalyzer:
         return l1
 
 
-
 class SBPAnalyzer(SchemeAnalyzer):
 #Анализатор SBP-схем
     def EnergyCons(self, f):
@@ -70,7 +73,6 @@ class SBPAnalyzer(SchemeAnalyzer):
         return abs(np.ones(f.size)@self.space_operator.H()@f)
 
 
-
 class ConvAnalyzer:
 #Анализатор сходимости схем
     def __init__(self, time_operator, space_operator, v): 
@@ -78,34 +80,34 @@ class ConvAnalyzer:
         self.space_operator = space_operator
         self.v              = v
 
-    def SpaceDet(self, cx, xmax):
+    def SpaceDet(self, xmax, xmin, size):
         #левые направленные разности
         if  (self.space_operator == 'Left1Periodic'):
-            return SD.Left1Periodic(xmax/cx, self.v, cx)
+            return SD.Left1Periodic(xmax, xmin, size, self.v)
         elif(self.space_operator == 'Left2Periodic'):
-            return SD.Left2Periodic(xmax/cx, self.v, cx)
+            return SD.Left2Periodic(xmax, xmin, size, self.v)
         elif(self.space_operator == 'Left21Periodic'):
-            return SD.Left21Periodic(xmax/cx, self.v, cx)
+            return SD.Left21Periodic(xmax, xmin, size, self.v)
         elif(self.space_operator == 'Left31Periodic'):
-            return SD.Left31Periodic(xmax/cx, self.v, cx)
+            return SD.Left31Periodic(xmax, xmin, size, self.v)
         elif(self.space_operator == 'Left32Periodic'):
-            return SD.Left32Periodic(xmax/cx, self.v, cx)
+            return SD.Left32Periodic(xmax, xmin, size, self.v)
 
         #Центральные схемы
         elif(self.space_operator == 'Center2Periodic'):
-            return SD.Center2Periodic(xmax/cx, self.v, cx)
+            return SD.Center2Periodic(xmax, xmin, size, self.v)
         elif(self.space_operator == 'Center4Periodic'):
-            return SD.Center4Periodic(xmax/cx, self.v, cx)
+            return SD.Center4Periodic(xmax, xmin, size, self.v)
 
         #SBP-SAT
         elif(self.space_operator == 'SBP21PROJ'):
-            return SD.SBP21PROJ(xmax/cx, self.v, cx+1)
+            return SD.SBP21PROJ(xmax, xmin, size, self.v)
         elif(self.space_operator == 'SBP42PROJ'):
-            return SD.SBP42PROJ(xmax/cx, self.v, cx+1)
+            return SD.SBP42PROJ(xmax, xmin, size, self.v)
         elif(self.space_operator == 'SBP21SAT'):
-            return SD.SBP21SAT(xmax/cx, self.v, cx+1)
+            return SD.SBP21SAT(xmax, xmin, size, self.v)
         elif(self.space_operator == 'SBP42SAT'):
-            return SD.SBP42SAT(xmax/cx, self.v, cx+1)
+            return SD.SBP42SAT(xmax, xmin, size, self.v)
 
     def TimeDef(self, ct, tmax, D):
         if   (self.time_operator == 'Euler'):
@@ -201,3 +203,13 @@ class ConvAnalyzer:
         print("Order of Convergence: " + str(math.log(sqrt(2/fcx*Error1@Error1)/sqrt(2/scx*Error2@Error2),base)))
         return sqrt(2/fcx*Error1@Error1)/sqrt(2/scx*Error2@Error2)
 
+
+def ICError(x,f):
+
+    Error = f[-1]-f[1]
+    print('l2-norm: ' + str(sqrt(Error@Error)))
+
+    plt.style.use('dark_background')
+    plt.plot(x,Error)
+
+    return Error

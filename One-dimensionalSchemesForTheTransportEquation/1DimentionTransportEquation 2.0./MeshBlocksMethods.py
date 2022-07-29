@@ -7,31 +7,30 @@ import TimeDifferentiationOperators as TD
 
 from scipy                import sparse
 from scipy.sparse         import linalg
-from numpy                import pi, sin, cos, ma
+from numpy                import pi, sin, cos, ma, exp
 from pylab                import *
 #----------------------------------------------------------------------------------------#
 #-------------------------------------BEGIN----------------------------------------------#
 #----------------------------------------------------------------------------------------#
 
 #-BLOCK-STRUCTURE-
-class Block:
+class Block1:
 
-    def __init__(self, xmin, xmax, cx):
-        self.mesh           = np.arange(0 , cx+1, dtype=double)*(xmax-xmin)/cx + xmin
+    def __init__(self, xmin, xmax, cx, ct):
+        self.mesh = np.arange(0 , cx+1, dtype = double)*(xmax-xmin)/cx + xmin
+        self.PHI  = np.zeros((ct+1, cx+1))
+    
+    def DefineIC(self, IC):
+        self.PHI[0] = IC
 
-class Block2Mesh:
+    def DefineICstandart(self, ICname, sin_coeff = 1, gauss_bias = 1, gauss_sigma=0.05):
+        if   (ICname == 'sin'):
+            self.PHI[0] = sin(sin_coeff*self.mesh)
+        elif (ICname == 'gauss'):
+            self.PHI[0] = exp(-(self.mesh-gauss_bias)**2/gauss_sigma)
+
+class Block2(Block1):
+    
     def __init__(self, cxl, cxr, xmin, xmax, sep, ct):
-        self.blockl   = Block(xmin, sep, cxl)
-        self.blockr   = Block(sep, xmax, cxr)
-        self.PHIl     = np.zeros((ct+1, self.blockl.mesh.size))
-        self.PHIr     = np.zeros((ct+1, self.blockr.mesh.size))
-
-    def DefineIC(self, ICl , ICr):
-        self.PHIl[0] = ICl
-        self.PHIr[0] = ICr
-
-    def GetFullSolution(self):
-        PHI_full = np.zeros((self.PHIl[:,0].size, np.concatenate((self.PHIl[0], self.PHIr[0])).size))
-        for i in range(self.PHIl[:,0].size):
-            PHI_full[i] = np.concatenate((self.PHIl[i], self.PHIr[i]))
-        return [np.concatenate((self.blockl.mesh, self.blockr.mesh)), PHI_full]
+        self.mesh     = np.concatenate((Block1(xmin, sep, cxl, ct).mesh, Block1(sep, xmax, cxr, ct).mesh))
+        self.PHI      = np.zeros((ct+1, cxl+cxr+2))

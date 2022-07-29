@@ -13,11 +13,11 @@ from pylab                import *
 class SpaceDiff:
     
     #main methods
-    def __init__(self, h, v, size):
-        self.h        = h                         #шаг дискретизации по пространству
-        self.v        = v                         #скорость
+    def __init__(self, xmin, xmax, size, v):
+        self.h        = (xmax-xmin)/(size-1)                   
+        self.v        = v                
         self.size     = size
-        self.matrix   = self.MatrixGenerate() #матрица оператора
+        self.matrix   = self.MatrixGenerate()
         
     def diff(self, f):
         #диффереенцирование
@@ -31,19 +31,19 @@ class SpaceDiff:
 #1. periodic operators
 class Left1Periodic(SpaceDiff):
     
-    def MatrixGenerate(self, size):
-        data  = np.array([np.zeros(size)-1, np.zeros(size)+1])
+    def MatrixGenerate(self):
+        data  = np.array([np.zeros(self.size)-1, np.zeros(self.size)+1])
         diags = np.array([-1, 0])
-        D       =   sparse.spdiags(data, diags, size, size).toarray()
+        D       =   sparse.spdiags(data, diags, self.size, self.size).toarray()
         D[0,-1] =  -1 #Внесение переодичности методом виртуальных точек
         return self.v/self.h*D
 
 class Left2Periodic(SpaceDiff):
     
-    def MatrixGenerate(self, size):
-        data  = np.array([np.ones(size), -4*np.ones(size), 3*np.ones(size)])
+    def MatrixGenerate(self):
+        data  = np.array([np.ones(self.size), -4*np.ones(self.size), 3*np.ones(self.size)])
         diags = np.array([-2, -1, 0])
-        D       =   sparse.spdiags(data, diags, size, size).toarray()
+        D       =   sparse.spdiags(data, diags, self.size, self.size).toarray()
         D[0,-1] =  -4 #Внесение переодичности методом виртуальных точек
         D[0,-2] =   1 #Внесение переодичности методом виртуальных точек
         D[1,-1] =   1 #Внесение переодичности методом виртуальных точек
@@ -51,10 +51,10 @@ class Left2Periodic(SpaceDiff):
 
 class Left21Periodic(SpaceDiff):
     
-    def MatrixGenerate(self, size):
-        data  = np.array([1/6*np.ones(size), -1*np.ones(size), 1/2*np.ones(size), 1/3*np.ones(size)])
+    def MatrixGenerate(self):
+        data  = np.array([1/6*np.ones(self.size), -1*np.ones(self.size), 1/2*np.ones(self.size), 1/3*np.ones(self.size)])
         diags = np.array([-2, -1, 0, 1])
-        D       =   sparse.spdiags(data, diags, size, size).toarray()
+        D       =   sparse.spdiags(data, diags, self.size, self.size).toarray()
         D[0,-1] =  -1   #Внесение переодичности методом виртуальных точек
         D[0,-2] =   1/6 #Внесение переодичности методом виртуальных точек
         D[1,-1] =   1/6 #Внесение переодичности методом виртуальных точек
@@ -63,10 +63,10 @@ class Left21Periodic(SpaceDiff):
 
 class Left31Periodic(SpaceDiff):
     
-    def MatrixGenerate(self, size):
-        data  = np.array([-1/12*np.ones(size), 1/2*np.ones(size), -3/2*np.ones(size), 5/6*np.ones(size), 1/4*np.ones(size)])
+    def MatrixGenerate(self):
+        data  = np.array([-1/12*np.ones(self.size), 1/2*np.ones(self.size), -3/2*np.ones(self.size), 5/6*np.ones(self.size), 1/4*np.ones(self.size)])
         diags = np.array([-3, -2, -1, 0, 1])
-        D       =   sparse.spdiags(data, diags, size, size).toarray()
+        D       =   sparse.spdiags(data, diags, self.size, self.size).toarray()
         D[0,-1] =  -3/2   #Внесение переодичности методом виртуальных точек
         D[0,-2] =   1/2   #Внесение переодичности методом виртуальных точек
         D[0,-3] =  -1/12 #Внесение переодичности методом виртуальных точек
@@ -78,10 +78,10 @@ class Left31Periodic(SpaceDiff):
 
 class Left32Periodic(SpaceDiff):
     
-    def MatrixGenerate(self, size):
-        data  = np.array([-1/30*np.ones(size), 1/4*np.ones(size), -1*np.ones(size), 3/10*np.ones(size), 1/2*np.ones(size), -1/20*np.ones(size)])
+    def MatrixGenerate(self):
+        data  = np.array([-1/30*np.ones(self.size), 1/4*np.ones(self.size), -1*np.ones(self.size), 3/10*np.ones(self.size), 1/2*np.ones(self.size), -1/20*np.ones(self.size)])
         diags = np.array([-3, -2, -1, 0, 1, 2])
-        D       =   sparse.spdiags(data, diags, size, size).toarray()
+        D       =   sparse.spdiags(data, diags, self.size, self.size).toarray()
         D[0,-1] = -1    #Внесение переодичности методом виртуальных точек
         D[0,-2] =  1/4   #Внесение переодичности методом виртуальных точек
         D[0,-3] = -1/30 #Внесение переодичности методом виртуальных точек
@@ -95,20 +95,20 @@ class Left32Periodic(SpaceDiff):
         
 class Center2Periodic(SpaceDiff):
     
-    def MatrixGenerate(self, size):
-        data  = 1/2*np.array([np.zeros(size)-1, np.zeros(size)+1])
+    def MatrixGenerate(self):
+        data  = 1/2*np.array([np.zeros(self.size)-1, np.zeros(self.size)+1])
         diags = np.array([-1, 1])
-        D       =   sparse.spdiags(data, diags, size, size).toarray()
+        D       =   sparse.spdiags(data, diags, self.size, self.size).toarray()
         D[0,-1] =   -1/2 #Внесение переодичности методом виртуальных точек
         D[-1,0] =    1/2 #Внесение переодичности методом виртуальных точек
         return self.v/self.h*D
         
 class Center4Periodic(SpaceDiff):
 
-    def MatrixGenerate(self, size):
-        data  = 1/12*np.array([(np.zeros(size)+1), 8*(np.zeros(size)-1), 8*(np.zeros(size)+1), (np.zeros(size)-1)])
+    def MatrixGenerate(self):
+        data  = 1/12*np.array([(np.zeros(self.size)+1), 8*(np.zeros(self.size)-1), 8*(np.zeros(self.size)+1), (np.zeros(self.size)-1)])
         diags = np.array([-2, -1, 1, 2])
-        D       =   sparse.spdiags(data, diags, size, size).toarray()
+        D       =   sparse.spdiags(data, diags, self.size, self.size).toarray()
         D[0,-2] =   1/12 #Внесение переодичности методом виртуальных точек
         D[0,-1] =  -8/12 #Внесение переодичности методом виртуальных точек
         D[1,-1] =   1/12 #Внесение переодичности методом виртуальных точек
@@ -140,7 +140,7 @@ class SBP21(SpaceDiff):
         return Q
 
     def MatrixGenerate(self):
-        return  np.linalg.inv(self.H()).dot(self.Q())
+        return  self.v*np.linalg.inv(self.H()).dot(self.Q())
 
 class SBP42(SpaceDiff):
 
@@ -196,24 +196,27 @@ class SBP42(SpaceDiff):
 
 class SBP21_2BLOCKS(SpaceDiff):
 
-    def __init__(self, hl, hr, sizel, sizer, v):
-        self.hl        = hl
-        self.hr        = hr
+    def __init__(self, xmin, xmax, sep, sizel, sizer, v):
+        self.hl        = (sep-xmin)/(sizel-1)
+        self.hr        = (xmax-sep)/(sizer-1)
         self.sizel     = sizel
         self.sizer     = sizer
+        self.xmin      = xmin
+        self.xmax      = xmax
+        self.sep       = sep
         self.v         = v               
         self.matrix    = self.MatrixGenerate()
 
     def H(self):
-        Opl = SBP21(self.hl,self.v,self.sizel)
-        Opr = SBP21(self.hr,self.v,self.sizer)
+        Opl = SBP42(self.xmin, self.sep ,self.sizel, self.v)
+        Opr = SBP42(self.sep, self.xmax ,self.sizer, self.v)
         Hl  = Opl.H()
         Hr  = Opr.H()
         return np.array(np.bmat([[Hl, np.zeros((self.sizel, self.sizer))], [np.zeros((self.sizer, self.sizel)), Hr]]))
     
     def Q(self):
-        Opl = SBP21(self.hl, self.v, self.sizel)
-        Opr = SBP21(self.hr, self.v, self.sizer)
+        Opl = SBP42(self.xmin, self.sep ,self.sizel, self.v)
+        Opr = SBP42(self.sep, self.xmax ,self.sizer, self.v)
         Ql  = Opl.Q()
         Qr  = Opr.Q()
         return np.array(np.bmat([[Ql, np.zeros((self.sizel, self.sizer))], [np.zeros((self.sizer, self.sizel)), Qr]]))
@@ -223,24 +226,27 @@ class SBP21_2BLOCKS(SpaceDiff):
 
 class SBP42_2BLOCKS(SpaceDiff):
 
-    def __init__(self, hl, hr, sizel, sizer, v):
-        self.hl        = hl
-        self.hr        = hr
+    def __init__(self, xmin, xmax, sep, sizel, sizer, v):
+        self.hl        = (sep-xmin)/(sizel-1)
+        self.hr        = (xmax-sep)/(sizer-1)
         self.sizel     = sizel
         self.sizer     = sizer
+        self.xmin      = xmin
+        self.xmax      = xmax
+        self.sep       = sep
         self.v         = v               
         self.matrix    = self.MatrixGenerate()
 
     def H(self):
-        Opl = SBP42(self.hl,self.v,self.sizel)
-        Opr = SBP42(self.hr,self.v,self.sizer)
+        Opl = SBP42(self.xmin, self.sep ,self.sizel, self.v)
+        Opr = SBP42(self.sep, self.xmax ,self.sizer, self.v)
         Hl  = Opl.H()
         Hr  = Opr.H()
         return np.array(np.bmat([[Hl, np.zeros((self.sizel, self.sizer))], [np.zeros((self.sizer,self.sizel)), Hr]]))
     
     def Q(self):
-        Opl = SBP42(self.hl,self.v,self.sizel)
-        Opr = SBP42(self.hr,self.v,self.sizer)
+        Opl = SBP42(self.xmin, self.sep ,self.sizel, self.v)
+        Opr = SBP42(self.sep, self.xmax ,self.sizer, self.v)
         Ql  = Opl.Q()
         Qr  = Opr.Q()
         return np.array(np.bmat([[Ql, np.zeros((self.sizel, self.sizer))], [np.zeros((self.sizer,self.sizel)), Qr]]))
@@ -251,27 +257,27 @@ class SBP42_2BLOCKS(SpaceDiff):
 #3. SBP-projaction methods
 class SBP21PROJ(SBP21):
 
-    def P(self, size):
-        A = np.zeros(size)+1
+    def P(self):
+        A = np.zeros(self.size)+1
         data  = np.array([A])
         diags = np.array([0])
-        P     = sparse.spdiags(data, diags, size, size).toarray()
+        P     = sparse.spdiags(data, diags, self.size, self.size).toarray()
         P[ 0, 0] = 1/2
         P[ 0,-1] = 1/2
         P[-1,-1] = 1/2
         P[-1, 0] = 1/2
         return P
 
-    def MatrixGenerate(self, size):
-        return self.v*(self.P(size)@np.linalg.inv(self.H(size))@self.Q(size))
+    def MatrixGenerate(self):
+        return self.v*(self.P()@np.linalg.inv(self.H())@self.Q())
 
 class SBP42PROJ(SBP42):
 
-    def P(self, size):
-        A = np.zeros(size)+1
+    def P(self):
+        A = np.zeros(self.size)+1
         data  = np.array([A])
         diags = np.array([0])
-        P     = sparse.spdiags(data, diags, size, size).toarray()
+        P     = sparse.spdiags(data, diags, self.size, self.size).toarray()
         P[ 0, 0] = 1/2
         P[ 0,-1] = 1/2
         P[-1,-1] = 1/2
@@ -279,7 +285,7 @@ class SBP42PROJ(SBP42):
         return P
 
     def MatrixGenerate(self, size):
-        return self.v*(self.P(size)@np.linalg.inv(self.H(size))@self.Q(size))
+        return self.v*(self.P()@np.linalg.inv(self.H())@self.Q())
 
 #4. SBP-SAT methods
 class SBP21SAT(SBP21):
@@ -293,7 +299,7 @@ class SBP21SAT(SBP21):
         return 1/2*(f[0]-f[-1])*(e0+eN)
 
     def diff(self, f):
-        return self.v*(self.matrix@f + np.linalg.solve(self.H(), self.SAT(f)))
+        return self.matrix@f + self.v*(np.linalg.solve(self.H(), self.SAT(f)))
 
 class SBP42SAT(SBP42):
 
@@ -306,9 +312,10 @@ class SBP42SAT(SBP42):
         return 1/2*(f[0]-f[-1])*(e0+eN)
 
     def diff(self, f):
-        return self.v*(self.matrix@f + np.linalg.solve(self.H(f.size),self.SAT(f)))
+        return self.matrix@f + self.v*(np.linalg.solve(self.H(f.size),self.SAT(f)))
 
 class SBP21SAT_2BLOCKS(SBP21_2BLOCKS):
+
     def SAT(self, f):
         #SAT-добавки в оператор
         e0l = np.zeros(f.size)
@@ -324,9 +331,10 @@ class SBP21SAT_2BLOCKS(SBP21_2BLOCKS):
         return 1/2*(f[0]-f[-1])*e0l - 1/2 *(f[self.sizel-1] - f[self.sizel])*eNl - 1/2*(f[self.sizel-1]-f[self.sizel])*e0r + 1/2*(f[0] - f[-1])*eNr
 
     def diff(self, f):
-        return self.v*(self.matrix@f + np.linalg.solve(self.H(),self.SAT(f)))
+        return self.matrix@f + self.v*(np.linalg.solve(self.H(),self.SAT(f)))
 
 class SBP42SAT_2BLOCKS(SBP42_2BLOCKS):
+
     def SAT(self, f):
         #SAT-добавки в оператор
         e0l = np.zeros(f.size)
@@ -342,4 +350,4 @@ class SBP42SAT_2BLOCKS(SBP42_2BLOCKS):
         return 1/2*(f[0]-f[-1])*e0l - 1/2 *(f[self.sizel-1] - f[self.sizel])*eNl - 1/2*(f[self.sizel-1]-f[self.sizel])*e0r + 1/2*(f[0] - f[-1])*eNr
 
     def diff(self, f):
-        return self.v*(self.matrix@f + np.linalg.solve(self.H(),self.SAT(f)))
+        return self.matrix@f + self.v*(np.linalg.solve(self.H(),self.SAT(f)))

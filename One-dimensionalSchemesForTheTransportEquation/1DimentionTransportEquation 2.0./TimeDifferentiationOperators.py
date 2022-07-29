@@ -13,8 +13,8 @@ from pylab                import *
 class TimeDiff:
     
     #main methods
-    def __init__(self, tau, space_operator): 
-        self.tau            = tau
+    def __init__(self, tmax, ct, space_operator): 
+        self.tau            = tmax/ct
         self.v              = space_operator.v
         self.space_operator = space_operator
         
