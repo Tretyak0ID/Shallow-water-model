@@ -1,6 +1,7 @@
 from state import State
 import numpy as np
 import sympy as sm
+import math
 
 
 def random_h(domains, h_mean):
@@ -61,7 +62,7 @@ def gaussian_hill_2rotor(domains, h_mean, xc=None, yc=None, sigma_x=200.0, sigma
     return state
 
 
-def geostrophic_balance(domains, pcori, g, h_mean):
+def stream_geostrophic_balance(domains, pcori, g, h_mean):
 
     state = State.zeros(domains)
     u0 = 50.0
@@ -89,12 +90,60 @@ def eddy_geostrophic_balance(domains, pcori, g, h_mean, scale_h, scale_sigma, xc
 
     for ind, domain in enumerate(domains):
         
-        dx = (domain.xx - xc) / domain.lx
-        dy = (domain.yy - yc) / domain.ly
-        state.h[ind] = h_mean - (h_mean * np.exp( - scale_sigma * dx ** 2 - scale_sigma * dy ** 2)) * scale_h
-        state.v[ind] =   g / pcori * h_mean * np.exp( - scale_sigma * dx ** 2 - scale_sigma * dy ** 2) * dx * scale_sigma / domain.lx * scale_h
-        state.u[ind] = - g / pcori * h_mean * np.exp( - scale_sigma * dx ** 2 - scale_sigma * dy ** 2) * dy * scale_sigma / domain.ly * scale_h
+        dx = (domain.xx - xc) / scale_sigma
+        dy = (domain.yy - yc) / scale_sigma
+        state.h[ind] = h_mean - (h_mean * np.exp( - dx ** 2 - dy ** 2)) * scale_h
+        state.v[ind] =   g / pcori * h_mean * scale_h * np.exp( - dx ** 2 - dy ** 2) * 2 * dx / scale_sigma
+        state.u[ind] = - g / pcori * h_mean * scale_h * np.exp( - dx ** 2 - dy ** 2) * 2 * dy / scale_sigma
 
+    return state
+
+def eddy_full_geostrophic_balance(domains, pcori, g, h_mean, scale_h, scale_sigma, xc=None, yc=None):
+    state = State.zeros(domains)
+    xc = xc if xc is not None else domains[0].lx / 2
+    yc = yc if yc is not None else domains[0].ly / 2
+
+    for ind, domain in enumerate(domains):
+
+        r = np.sqrt((domain.xx - xc) ** 2 + (domain.yy - yc) ** 2)
+        phi = np.zeros_like(r)
+        for i in range(domain.nx):
+            for j in range(domain.ny):
+                phi[j,i] = math.atan2((domain.yy[j,i] - yc), (domain.xx[j,i] -xc))
+
+        dhdr = h_mean * np.exp( - (r / scale_sigma) ** 2) * scale_h * 2.0 * r / scale_sigma ** 2
+        vtan = (- r * pcori + np.sqrt((r * pcori) ** 2 + 4.0 * g * r * dhdr)) / 2.0
+
+        state.h[ind] = h_mean - (h_mean * np.exp( - (r / scale_sigma) ** 2)) * scale_h
+        state.u[ind] = - vtan * np.cos(np.pi / 2.0 - phi)
+        state.v[ind] =   vtan * np.sin(np.pi / 2.0 - phi)
+        
+    return state
+
+def eddy_and_velocity_geostrophic_balance(domains, pcori, g, h_mean, scale_h, scale_sigma, xc=None, yc=None):
+    state = State.zeros(domains)
+    xc = xc if xc is not None else domains[0].lx / 2
+    yc = yc if yc is not None else domains[0].ly / 2
+
+    for ind, domain in enumerate(domains):
+
+        r = np.sqrt((domain.xx - xc) ** 2 + (domain.yy - yc) ** 2)
+        phi = np.zeros_like(r)
+        for i in range(domain.nx):
+            for j in range(domain.ny):
+                phi[j,i] = math.atan2((domain.yy[j,i] - yc), (domain.xx[j,i] -xc))
+
+        dhdr = h_mean * np.exp( - (r / scale_sigma) ** 2) * scale_h * 2.0 * r / scale_sigma ** 2
+        vtan = (- r * pcori + np.sqrt((r * pcori) ** 2 + 4.0 * g * r * dhdr)) / 2.0
+
+        h0 = np.cos((domain.yy + 10**7) / (6371.22 * 1000.0)) * (6371.22 * 1000.0) * pcori / g * 10 #Фоновое поле скорсоти
+        u0 = np.sin((domain.yy + 10**7) / (6371.22 * 1000.0)) * 10
+        v0 = 0
+
+        state.h[ind] = h_mean - (h_mean * np.exp( - (r / scale_sigma) ** 2)) * scale_h + h0
+        state.u[ind] = - vtan * np.cos(np.pi / 2.0 - phi) + u0
+        state.v[ind] =   vtan * np.sin(np.pi / 2.0 - phi) + v0
+        
     return state
 
 

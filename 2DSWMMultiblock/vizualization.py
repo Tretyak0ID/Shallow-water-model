@@ -177,10 +177,10 @@ def imshow_interpolated_field(f, domains, savefig = False, title = None, surf_nx
     grid_z = scipy.interpolate.griddata((x, y), z, (grid_x, grid_y), method='linear')
 
     imshow = plt.imshow(grid_z.T, cmap='seismic')
-    plt.colorbar(imshow)
     plt.title(title)
 
     return imshow
+
 
 def animate_imshow(f, domains, anim_speed=1, title = None, save = False, Name = None):
 
@@ -188,14 +188,14 @@ def animate_imshow(f, domains, anim_speed=1, title = None, save = False, Name = 
     y = np.concatenate([domain.yy.flatten() for domain in domains])
     tri = mtri.Triangulation(x, y)
 
-    fig, ax = plt.subplots(figsize=(5, 5))
+    fig, ax = plt.subplots(figsize=(8, 6))
 
-    imshow_interpolated_field(f[0], domains)
+    im = imshow_interpolated_field(f[0], domains)
 
     def animate(n):
         frame = anim_speed * n
         ax.cla()
-        imshow_interpolated_field(f[frame], domains, )
+        im.set_array(f[frame], domains)
         return fig
 
     anim = animation.FuncAnimation(fig, animate, frames=len(f) // anim_speed, interval=1, repeat=False)
