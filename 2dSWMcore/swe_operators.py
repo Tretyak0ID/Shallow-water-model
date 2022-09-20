@@ -1,5 +1,4 @@
 import operators as op
-import numpy as np
 from state import State
 
 
@@ -36,8 +35,7 @@ class SweVecInvFormOperator:
 
         return State(- gx + (self.pcori + curl) * state.v,
                      - gy - (self.pcori + curl) * state.u,
-                     - div,
-                     0)
+                     - div)
 
 
 class SweAdvectiveFormOperator:
@@ -49,13 +47,11 @@ class SweAdvectiveFormOperator:
 
     def calc_rhs(self, state, domain):
         gx, gy = op.calc_grad(state.h, domain, self.diff_method)
-        divh = op.calc_div(state.h * state.u, state.h * state.v, domain, self.diff_method)
-        divq = op.calc_div(state.q * state.u, state.q * state.v, domain, self.diff_method)
+        div = op.calc_div(state.h * state.u, state.h * state.v, domain, self.diff_method)
 
         du_dx, du_dy = op.calc_grad(state.u, domain, self.diff_method)
         dv_dx, dv_dy = op.calc_grad(state.v, domain, self.diff_method)
 
         return State(- self.g * gx + self.pcori * state.v - state.u * du_dx - state.v * du_dy,
                      - self.g * gy - self.pcori * state.u - state.u * dv_dx - state.v * dv_dy,
-                     - divh,
-                     - divq + 10 ** -5 * np.sqrt(state.u ** 2 + state.v ** 2) - state.q / (3*86400.0))
+                     - div)

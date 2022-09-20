@@ -53,7 +53,6 @@ def imshow_field(f, domain):
     fig, ax = plt.subplots()
     im = plt.imshow(f, animated=True, interpolation='bilinear', cmap='seismic')
     plt.show()
-    plt.colorbar();
     return im
 
 def hv_field_plot(domain, state):
