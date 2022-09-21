@@ -59,11 +59,11 @@ def eddy_full_geostrophic_balance(domain, pcori, g, h_mean, scale_h, scale_sigma
 def eddy_and_velocity_geostrophic_balance(domain, pcori, g, h_mean, scale_h, scale_sigma):
     state = State.zeros(domain.nx, domain.ny)
 
-    r = np.sqrt((domain.xx - np.mean(domain.x)) ** 2 + (domain.yy - np.mean(domain.y)) ** 2)
+    r = np.sqrt((domain.xx - np.mean(domain.x) / 2) ** 2 + (domain.yy - np.mean(domain.y)) ** 2)
     phi = np.zeros_like(r)
     for i in range(domain.nx):
         for j in range(domain.ny):
-            phi[j,i] = math.atan2((domain.yy[j,i] - np.mean(domain.y)), (domain.xx[j,i] - np.mean(domain.x)))
+            phi[j,i] = math.atan2((domain.yy[j,i] - np.mean(domain.y)), (domain.xx[j,i] - np.mean(domain.x) / 2))
 
     dhdr = h_mean * np.exp( - (r / scale_sigma) ** 2) * scale_h * 2.0 * r / scale_sigma ** 2
     vtan = (- r * pcori + np.sqrt((r * pcori) ** 2 + 4.0 * g * r * dhdr)) / 2.0
