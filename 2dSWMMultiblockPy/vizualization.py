@@ -59,7 +59,7 @@ def tripcolor_field(f, domains):
     return pic
 
 
-def animate_tripcolor(f, domains, anim_speed=1):
+def animate_tripcolor(f, domains, anim_speed=1, param = 0):
 
     x = np.concatenate([domain.xx.flatten() for domain in domains])
     y = np.concatenate([domain.yy.flatten() for domain in domains])
@@ -71,13 +71,13 @@ def animate_tripcolor(f, domains, anim_speed=1):
 
     fig, ax = plt.subplots(figsize=(8, 6))
 
-    ax.tripcolor(tri, z[0], shading='flat', cmap='seismic')
+    ax.imshow(tri, z[0], shading='flat', cmap='seismic')
 
     def animate(n):
         frame = anim_speed * n
 
         ax.cla()
-        ax.tripcolor(tri, z[frame], shading='flat', cmap='seismic')
+        ax.imshow(tri, z[frame], shading='flat', cmap='seismic')
         return fig
 
     anim = animation.FuncAnimation(fig, animate, frames=len(f) // anim_speed, interval=10, repeat=False, blit=True)
@@ -176,8 +176,7 @@ def imshow_interpolated_field(f, domains, savefig = False, title = None, surf_nx
 
     grid_z = scipy.interpolate.griddata((x, y), z, (grid_x, grid_y), method='linear')
 
-    imshow = plt.imshow(grid_z.T, cmap='seismic')
-    plt.colorbar(imshow)
+    imshow = plt.imshow(grid_z.T, interpolation='bilinear', cmap='seismic')
     plt.title(title)
 
     return imshow
